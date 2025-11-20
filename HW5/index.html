@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HW5</title>
+</head>
+
+<body>
+    <div class="show">
+        <div class="data"></div>
+        <div>
+            <div class="students">
+                <div class="student" style="display: flex;">
+                    <div class="serial">1</div>
+                    <div class="card">#12314142</div>
+                    <div class="name">Alex</div>
+                    <div class="grade">0</div>
+                </div>
+
+                <div class="student" style="display: flex;">
+                    <div class="serial">1</div>
+                    <div class="card">#12314142</div>
+                    <div class="name">Alex</div>
+                    <div class="grade">0</div>
+                </div>
+
+
+
+            </div>
+            <button class="load">Load Data</button>
+        </div>
+    </div>
+
+
+
+</body>
+
+<style>
+    .show {
+        display: flex;
+    }
+
+    .grade {
+        color: red;
+        font-size: large;
+        font-weight: bolder;
+        border: 1px solid black;
+        height: 5vmin;
+        width: 5%;
+        margin-top: 2vmin;
+        margin-right: 0;
+        position: absolute;
+        right: 2vmin;
+        text-align: end;
+    }
+
+
+
+    .name {
+        border: 1px solid black;
+        height: 5vmin;
+        width: auto;
+        margin: 2vmin 0 2vmin 2vmin;
+
+    }
+
+    .card {
+        border: 1px solid black;
+        height: 5vmin;
+        width: auto;
+        margin: 2vmin 0 2vmin 2vmin;
+
+    }
+
+    .serial {
+        color: white;
+        border: 1px solid black;
+        height: 5vmin;
+        width: 10%;
+        border-radius: 5vmin;
+        text-align: center;
+        line-height: 5vmin;
+        margin: 2vmin 0 2vmin 2vmin;
+        background-color: rgb(0, 0, 255);
+    }
+
+    .students>.student:first-of-type>.serial {
+        background-color: rgb(255, 0, 255);
+    }
+
+    .data {
+        width: 50vmin;
+        height: 60vmin;
+        border: 1px solid black;
+    }
+
+    .students {
+        margin: 0 0 0 2vmin;
+        width: 50vmin;
+        height: 45vmin;
+        border: 1px solid black;
+        display: block;
+    }
+
+    /* 居中显示 */
+    .load {
+        display: block;
+        margin: 2vmin auto 0 auto;
+    }
+</style>
+
+<script>
+    // http://ext.gaomuxuexi.com:5870/task/random
+    document.querySelector('.load').onclick = function () {
+        // 使用原生ajax
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://ext.gaomuxuexi.com:5870/task/random", false);
+        xhr.send();
+        // console.log(xhr.status + ":" + xhr.responseText);
+        result = JSON.parse(xhr.responseText);
+        console.log(result);
+        if (result.no === 500) {
+            alert(result.msg);
+        } else {
+
+        }
+        // fetch('http://ext.gaomuxuexi.com:5870/task/random')
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         console.log(data);
+        //         document.querySelector('.data').innerText = JSON.stringify(data, null, 2);
+        //         document.querySelector('.student').innerText = `Name: ${data.name}\nAge: ${data.age}\nGrade: ${data.grade}`;
+        //     })
+        //     .catch(error => console.error('Error fetching data:', error));
+    };
+</script>
+
+</html>

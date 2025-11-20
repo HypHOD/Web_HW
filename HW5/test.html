@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>原生树形 JSON 输入器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+
+        body {
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+
+        .tree-json-editor {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* 顶部操作区 */
+        .editor-header {
+            padding: 16px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #409eff;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #f56c6c;
+            color: #fff;
+        }
+
+        .btn-success {
+            background: #67c23a;
+            color: #fff;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* 主体内容区 */
+        .editor-content {
+            display: flex;
+            flex-wrap: wrap;
+            min-height: calc(100vh - 180px);
+        }
+
+        .tree-edit,
+        .json-preview {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .tree-edit {
+            border-right: 1px solid #eee;
+        }
+
+        .editor-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        /* 树形结构样式 */
+        .tree-root {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tree-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .tree-item-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .expand-icon {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .node-label-input {
+            flex: 1;
+            min-width: 120px;
+            padding: 6px 8px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .node-label-input:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+        .node-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f5f7fa;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .action-btn:hover {
+            background: #eef2f7;
+        }
+
+        .action-btn.add {
+            color: #67c23a;
+        }
+
+        .action-btn.delete {
+            color: #f56c6c;
+        }
+
+        .tree-item-children {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: 24px;
+            /* 缩进 */
+        }
+
+        .add-root-btn {
+            margin-top: 8px;
+            color: #409eff;
+            background: transparent;
+            border: 1px dashed #409eff;
+        }
+
+        /* JSON 预览区样式 */
+        .json-textarea {
+            width: 100%;
+            height: calc(100% - 40px);
+            min-height: 300px;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Consolas', monospace;
+            resize: none;
+            background: #fafafa;
+            outline: none;
+        }
+
+        .json-textarea:focus {
+            border-color: #409eff;
+            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .modal-close {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 18px;
+            color: #999;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-textarea {
+            width: 100%;
+            height: 200px;
+            padding: 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+            font-family: 'Consolas', monospace;
+            resize: vertical;
+            margin-bottom: 16px;
+        }
+
+        .modal-footer {
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 提示消息样式 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            border-radius: 4px;
+            color: #fff;
+            font-size: 14px;
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(-20px);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success {
+            background: #67c23a;
+        }
+
+        .toast-error {
+            background: #f56c6c;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="tree-json-editor">
+        <!-- 顶部操作区 -->
+        <div class="editor-header">
+            <button class="btn btn-primary" id="importBtn">
+                <span>导入 JSON</span>
+            </button>
+            <button class="btn btn-danger" id="resetBtn">
+                <span>重置</span>
+            </button>
+            <button class="btn btn-success" id="copyBtn">
+                <span>复制 JSON</span>
+            </button>
+        </div>
+
+        <!-- 主体内容区 -->
+        <div class="editor-content">
+            <!-- 树形编辑区 -->
+            <div class="tree-edit">
+                <h3 class="editor-title">树形结构编辑</h3>
+                <div class="tree-root" id="treeRoot"></div>
+                <button class="btn add-root-btn" id="addRootBtn">
+                    <span>添加根节点</span>
+                </button>
+            </div>
+
+            <!-- JSON 预览区 -->
+            <div class="json-preview">
+                <h3 class="editor-title">JSON 预览</h3>
+                <textarea class="json-textarea" id="jsonPreview" readonly placeholder="树形结构对应的 JSON"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入JSON弹窗 -->
+    <div class="modal" id="importModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">导入 JSON</h3>
+                <button class="modal-close" id="closeModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea class="modal-textarea" id="importJsonInput" placeholder="请输入JSON格式的树形数据"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="confirmImportBtn">确认导入</button>
+                <button class="btn" id="cancelImportBtn">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // 树形节点类型定义（JS对象结构）
+        /**
+         * @typedef {Object} TreeItemNode
+         * @property {string} id - 节点唯一标识
+         * @property {string} label - 节点显示文本
+         * @property {TreeItemNode[]} [children] - 子节点数组
+         * @property {boolean} [expanded] - 是否展开（默认true）
+         */
+
+        // 全局状态
+        const state = {
+            /** @type {TreeItemNode[]} 树形数据 */
+            treeData: [],
+            /** 导入弹窗元素 */
+            importModal: document.getElementById('importModal'),
+            /** JSON预览文本域 */
+            jsonPreview: document.getElementById('jsonPreview'),
+            /** 树形根容器 */
+            treeRoot: document.getElementById('treeRoot'),
+            /** 提示消息元素 */
+            toast: document.getElementById('toast')
+        };
+
+        // 工具函数
+        /**
+         * 生成唯一ID
+         * @returns {string} 唯一ID
+         */
+        const generateId = () => `node_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+
+        /**
+         * 显示提示消息
+         * @param {string} message - 消息内容
+         * @param {string} type - 消息类型（success/error）
+         */
+        const showToast = (message, type = 'success') => {
+            const toast = state.toast;
+            toast.textContent = message;
+            toast.className = `toast toast-${type}`;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        };
+
+        /**
+         * 格式化JSON字符串
+         * @param {any} data - 要格式化的数据
+         * @returns {string} 格式化后的JSON字符串
+         */
+        const formatJson = (data) => {
+            try {
+                return JSON.stringify(data, null, 2);
+            } catch (e) {
+                return 'JSON格式错误';
+            }
+        };
+
+        /**
+         * 校验树形数据合法性
+         * @param {any[]} nodes - 要校验的节点数组
+         * @returns {boolean} 是否合法
+         */
+        const isValidTree = (nodes) => {
+            if (!Array.isArray(nodes)) return false;
+            return nodes.every(node => {
+                if (typeof node !== 'object' || node === null) return false;
+                if (!node.id || !node.label) return false;
+                if (node.children) {
+                    return isValidTree(node.children);
+                }
+                return true;
+            });
+        };
+
+        // 树形操作方法
+        /**
+         * 添加根节点
+         */
+        const addRootNode = () => {
+            const newNode = {
+                id: generateId(),
+                label: '新根节点',
+                children: [],
+                expanded: true
+            };
+            state.treeData.push(newNode);
+            renderTree();
+            syncJson();
+        };
+
+        /**
+         * 添加子节点
+         * @param {TreeItemNode} parentNode - 父节点
+         */
+        const addChildNode = (parentNode) => {
+            const newNode = {
+                id: generateId(),
+                label: '新子节点',
+                children: [],
+                expanded: true
+            };
+            if (!parentNode.children) parentNode.children = [];
+            parentNode.children.push(newNode);
+            renderTree();
+            syncJson();
+        };
+
+        /**
+         * 更新节点属性
+         * @param {TreeItemNode} node - 要更新的节点
+         * @param {string} key - 属性名
+         * @param {any} value - 属性值
+         */
+        const updateNode = (node, key, value) => {
+            node[key] = value;
+            syncJson();
+        };
+
+        /**
+         * 删除节点
+         * @param {number} index - 节点在父级数组中的索引
+         * @param {TreeItemNode[]} [parentArray=state.treeData] - 父级节点数组（默认根节点数组）
+         */
+        const deleteNode = (index, parentArray = state.treeData) => {
+            parentArray.splice(index, 1);
+            renderTree();
+            syncJson();
+        };
+
+        /**
+         * 切换节点展开/折叠状态
+         * @param {string} nodeId - 节点ID
+         */
+        const toggleNodeExpand = (nodeId) => {
+            const findNode = (nodes) => {
+                for (const node of nodes) {
+                    if (node.id === nodeId) {
+                        return node;
+                    }
+                    if (node.children && node.children.length) {
+                        const found = findNode(node.children);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            };
+
+            const node = findNode(state.treeData);
+            if (node) {
+                node.expanded = !node.expanded;
+                renderTree();
+            }
+        };
+
+        // 渲染相关方法
+        /**
+         * 渲染单个树形节点
+         * @param {TreeItemNode} node - 节点数据
+         * @param {number} depth - 节点深度（用于缩进）
+         * @param {TreeItemNode[]} parentArray - 父级节点数组
+         * @param {number} index - 节点在父级数组中的索引
+         * @returns {HTMLElement} 节点DOM元素
+         */
+        const renderTreeNode = (node, depth, parentArray, index) => {
+            const treeItem = document.createElement('div');
+            treeItem.className = 'tree-item';
+            treeItem.dataset.nodeId = node.id;
+
+            // 节点头部
+            const itemHeader = document.createElement('div');
+            itemHeader.className = 'tree-item-header';
+            itemHeader.style.paddingLeft = `${depth * 20}px`;
+
+            // 展开/折叠图标（有子节点才显示）
+            if (node.children && node.children.length > 0) {
+                const expandIcon = document.createElement('div');
+                expandIcon.className = 'expand-icon';
+                expandIcon.innerHTML = node.expanded ? '−' : '+'; // 减号/加号
+                expandIcon.title = node.expanded ? '折叠' : '展开';
+                expandIcon.addEventListener('click', () => toggleNodeExpand(node.id));
+                itemHeader.appendChild(expandIcon);
+            } else {
+                // 无子女节点时添加空白占位，保持对齐
+                const emptyPlaceholder = document.createElement('div');
+                emptyPlaceholder.style.width = '16px';
+                itemHeader.appendChild(emptyPlaceholder);
+            }
+
+            // 节点标签输入框
+            const labelInput = document.createElement('input');
+            labelInput.type = 'text';
+            labelInput.className = 'node-label-input';
+            labelInput.value = node.label;
+            labelInput.addEventListener('input', (e) => {
+                updateNode(node, 'label', e.target.value);
+            });
+            itemHeader.appendChild(labelInput);
+
+            // 操作按钮组
+            const actions = document.createElement('div');
+            actions.className = 'node-actions';
+
+            // 添加子节点按钮
+            const addBtn = document.createElement('button');
+            addBtn.className = 'action-btn add';
+            addBtn.innerHTML = '+';
+            addBtn.title = '添加子节点';
+            addBtn.addEventListener('click', () => addChildNode(node));
+            actions.appendChild(addBtn);
+
+            // 删除节点按钮
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'action-btn delete';
+            deleteBtn.innerHTML = '×';
+            deleteBtn.title = '删除节点';
+            deleteBtn.addEventListener('click', () => deleteNode(index, parentArray));
+            actions.appendChild(deleteBtn);
+
+            itemHeader.appendChild(actions);
+            treeItem.appendChild(itemHeader);
+
+            // 子节点容器（展开时显示）
+            if (node.expanded && node.children && node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'tree-item-children';
+                node.children.forEach((child, idx) => {
+                    const childNode = renderTreeNode(child, depth + 1, node.children, idx);
+                    childrenContainer.appendChild(childNode);
+                });
+                treeItem.appendChild(childrenContainer);
+            }
+
+            return treeItem;
+        };
+
+        /**
+         * 渲染整个树形结构
+         */
+        const renderTree = () => {
+            const treeRoot = state.treeRoot;
+            treeRoot.innerHTML = ''; // 清空现有内容
+
+            state.treeData.forEach((node, index) => {
+                const treeNode = renderTreeNode(node, 0, state.treeData, index);
+                treeRoot.appendChild(treeNode);
+            });
+        };
+
+        /**
+         * 同步树形数据到JSON预览区
+         */
+        const syncJson = () => {
+            const jsonString = formatJson(state.treeData);
+            state.jsonPreview.value = jsonString;
+        };
+
+        // 导入JSON相关方法
+        /**
+         * 打开导入弹窗
+         */
+        const openImportModal = () => {
+            const importInput = document.getElementById('importJsonInput');
+            importInput.value = state.jsonPreview.value; // 默认填充当前JSON
+            state.importModal.classList.add('show');
+        };
+
+        /**
+         * 关闭导入弹窗
+         */
+        const closeImportModal = () => {
+            state.importModal.classList.remove('show');
+        };
+
+        /**
+         * 确认导入JSON
+         */
+        const confirmImportJson = () => {
+            const importInput = document.getElementById('importJsonInput');
+            const jsonValue = importInput.value.trim();
+
+            if (!jsonValue) {
+                showToast('请输入JSON数据', 'error');
+                return;
+            }
+
+            try {
+                const parsedData = JSON.parse(jsonValue);
+                if (isValidTree(parsedData)) {
+                    // 为每个节点补充expanded属性（默认true）
+                    const补全Expanded = (nodes) => {
+                        nodes.forEach(node => {
+                            if (node.expanded === undefined) node.expanded = true;
+                            if (node.children && node.children.length) {
+                                补全Expanded(node.children);
+                            }
+                        });
+                    };
+                    补全Expanded(parsedData);
+
+                    state.treeData = parsedData;
+                    renderTree();
+                    syncJson();
+                    closeImportModal();
+                    showToast('导入成功');
+                } else {
+                    showToast('JSON格式不合法，需包含id和label字段', 'error');
+                }
+            } catch (e) {
+                showToast('JSON解析失败，请检查格式', 'error');
+            }
+        };
+
+        /**
+         * 重置树形结构
+         */
+        const resetTree = () => {
+            state.treeData = [];
+            renderTree();
+            syncJson();
+            showToast('已重置');
+        };
+
+        /**
+         * 复制JSON到剪贴板
+         */
+        const copyJson = () => {
+            const jsonText = state.jsonPreview.value;
+            navigator.clipboard.writeText(jsonText)
+                .then(() => showToast('JSON已复制'))
+                .catch(() => showToast('复制失败', 'error'));
+        };
+
+        // 初始化事件监听
+        const initEventListeners = () => {
+            // 顶部按钮事件
+            document.getElementById('addRootBtn').addEventListener('click', addRootNode);
+            document.getElementById('importBtn').addEventListener('click', openImportModal);
+            document.getElementById('resetBtn').addEventListener('click', resetTree);
+            document.getElementById('copyBtn').addEventListener('click', copyJson);
+
+            // 弹窗事件
+            document.getElementById('closeModalBtn').addEventListener('click', closeImportModal);
+            document.getElementById('confirmImportBtn').addEventListener('click', confirmImportJson);
+            document.getElementById('cancelImportBtn').addEventListener('click', closeImportModal);
+
+            // 点击弹窗外部关闭
+            state.importModal.addEventListener('click', (e) => {
+                if (e.target === state.importModal) {
+                    closeImportModal();
+                }
+            });
+        };
+
+        // 初始化应用
+        const initApp = () => {
+            initEventListeners();
+            syncJson(); // 初始同步JSON（空）
+        };
+
+        // 启动应用
+        initApp();
+    </script>
+</body>
+
+</html>
