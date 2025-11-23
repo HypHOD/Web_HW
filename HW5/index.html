@@ -12,18 +12,18 @@
         <div class="data"></div>
         <div>
             <div class="students">
-                <div class="student" style="display: flex;">
+                <div class="student" id="female" style="display: flex;">
                     <div class="serial">1</div>
                     <div class="card">#12314142</div>
                     <div class="name">Alex</div>
-                    <div class="grade">0</div>
+                    <div class="grade" id="failed">0</div>
                 </div>
 
-                <div class="student" style="display: flex;">
+                <div class="student" id="male" style="display: flex;">
                     <div class="serial">1</div>
                     <div class="card">#12314142</div>
                     <div class="name">Alex</div>
-                    <div class="grade">0</div>
+                    <div class="grade" id="passed">0</div>
                 </div>
 
 
@@ -42,35 +42,40 @@
         display: flex;
     }
 
+    .student {
+        display: flex;
+        align-items: center;
+        margin-top: 1.5vmin;
+    }
+
     .grade {
         color: red;
         font-size: large;
         font-weight: bolder;
         border: 1px solid black;
-        height: 5vmin;
-        width: 5%;
-        margin-top: 2vmin;
-        margin-right: 0;
-        position: absolute;
-        right: 2vmin;
+        height: auto;
+        width: auto;
         text-align: end;
+        line-height: 5vmin;
+        margin-left: auto;
+        margin-right: 1vmin;
     }
-
-
 
     .name {
         border: 1px solid black;
-        height: 5vmin;
+        height: auto;
         width: auto;
-        margin: 2vmin 0 2vmin 2vmin;
+        /* margin: 2vmin 0 2vmin 2vmin; */
+        margin-left: 1vmin;
 
     }
 
     .card {
         border: 1px solid black;
-        height: 5vmin;
+        height: auto;
         width: auto;
-        margin: 2vmin 0 2vmin 2vmin;
+        /* margin: 2vmin 0 2vmin 2vmin; */
+        margin-left: 1vmin;
 
     }
 
@@ -82,12 +87,24 @@
         border-radius: 5vmin;
         text-align: center;
         line-height: 5vmin;
-        margin: 2vmin 0 2vmin 2vmin;
+        /* margin: 2vmin 0 2vmin 2vmin; */
+        margin-left: 2vmin;
         background-color: rgb(0, 0, 255);
     }
 
-    .students>.student:first-of-type>.serial {
+    /* .students>.student:first-of-type>.serial {
         background-color: rgb(255, 0, 255);
+    } */
+    #female .serial {
+        background-color: rgb(255, 0, 255);
+    }
+
+    #passed {
+        color: rgb(1, 171, 1);
+    }
+
+    #failed {
+        color: rgb(255, 0, 0);
     }
 
     .data {
@@ -102,6 +119,7 @@
         height: 45vmin;
         border: 1px solid black;
         display: block;
+        overflow: auto;
     }
 
     /* 居中显示 */
@@ -123,17 +141,48 @@
         console.log(result);
         if (result.no === 500) {
             alert(result.msg);
-        } else {
-
+            return;
         }
-        // fetch('http://ext.gaomuxuexi.com:5870/task/random')
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         console.log(data);
-        //         document.querySelector('.data').innerText = JSON.stringify(data, null, 2);
-        //         document.querySelector('.student').innerText = `Name: ${data.name}\nAge: ${data.age}\nGrade: ${data.grade}`;
-        //     })
-        //     .catch(error => console.error('Error fetching data:', error));
+        const students = result.list || [];
+        const studentsContainer = document.querySelector('.students');
+        studentsContainer.innerHTML = ''; // 清空现有内容
+        students.forEach((student, index) => {
+            const studentDiv = document.createElement('div');
+            studentDiv.className = 'student';
+            if (result.list[index].gender === 1) {
+                studentDiv.id = 'female';
+            } else {
+                studentDiv.id = 'male';
+            }
+            studentDiv.style.display = 'flex';
+            const serialDiv = document.createElement('div');
+            serialDiv.className = 'serial';
+            serialDiv.innerText = index + 1;
+            if (index === 0) {
+                serialDiv.style.backgroundColor = 'rgb(255, 0, 255)';
+            }
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'card';
+            cardDiv.innerText = "#" + student.sno;
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'name';
+            nameDiv.innerText = student.name;
+            const gradeDiv = document.createElement('div');
+            if (student.score >= 60) {
+                gradeDiv.id = 'passed';
+            } else {
+                gradeDiv.id = 'failed';
+            }
+            gradeDiv.className = 'grade';
+            gradeDiv.innerText = student.score;
+            studentDiv.appendChild(serialDiv);
+            studentDiv.appendChild(cardDiv);
+            studentDiv.appendChild(nameDiv);
+            studentDiv.appendChild(gradeDiv);
+            studentsContainer.appendChild(studentDiv);
+        });
+        // 渲染树形图
+
     };
 </script>
 
