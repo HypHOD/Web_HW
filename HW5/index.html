@@ -16,6 +16,7 @@
                     <div class="tree-serial">1</div>
                     <div class="node-data">节点内容</div>
                 </div>
+
             </div>
         </div>
         <div>
@@ -51,6 +52,7 @@
         color: rgb(85, 85, 85);
         font-size: larger;
         align-items: center;
+        white-space: nowrap;
     }
 
     .toggle-btn:hover {
@@ -89,24 +91,37 @@
     }
 
     .tree-children {
-        clear: left;
+        clear: initial;
         margin-left: 4vmin;
+        margin-top: 0vmin;
         flex-direction: column;
-        display: block;
+        display: flex;
+        width: 100%;
+
     }
 
     .tree-node {
         align-items: center;
         display: flex;
+        flex-wrap: wrap;
         margin-top: 0.5vmin;
         margin-left: 0vmin;
+        white-space: nowrap;
 
+        /* overflow: auto; */
     }
 
     .tree-container {
+        /* display: block; */
         overflow: auto;
-        display: block;
+    }
 
+    .data {
+        width: 50vmin;
+        height: 60vmin;
+        border: 1px solid black;
+        overflow-x: auto;
+        overflow-y: auto;
     }
 
     .show {
@@ -176,12 +191,6 @@
 
     #failed {
         color: rgb(255, 0, 0);
-    }
-
-    .data {
-        width: 50vmin;
-        height: 60vmin;
-        border: 1px solid black;
     }
 
     .students {
@@ -273,7 +282,7 @@
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'toggle-btn';
             toggleBtn.setAttribute('isDisplayed', 'false');
-            toggleBtn.innerText = '+';
+            toggleBtn.innerText = '+'
             if (!nodeData.C || nodeData.C.length === 0) {
                 toggleBtn.style.visibility = 'hidden';
             }
@@ -289,7 +298,6 @@
 
             const childrenContainer = document.createElement('div');
             childrenContainer.className = 'tree-children';
-
 
             treeNodeDiv.appendChild(toggleBtn);
             treeNodeDiv.appendChild(treeSerialDiv);
