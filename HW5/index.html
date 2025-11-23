@@ -9,14 +9,11 @@
 
 <body>
     <div class="show">
-        <div class="data">
-            <div class="tree-container">
-                <div class="tree-node">
-                    <button class="toggle-btn" isDisplayed="false">+</button>
-                    <div class="tree-serial">1</div>
-                    <div class="node-data">节点内容</div>
-                </div>
-
+        <div class="tree-container">
+            <div class="tree-node">
+                <button class="toggle-btn" isDisplayed="false">+</button>
+                <div class="tree-serial">1</div>
+                <div class="node-data">节点内容</div>
             </div>
         </div>
         <div>
@@ -34,9 +31,6 @@
                     <div class="name">Alex</div>
                     <div class="grade" id="passed">0</div>
                 </div>
-
-
-
             </div>
             <button class="load">Load Data</button>
         </div>
@@ -90,6 +84,19 @@
         background-color: rgb(0, 0, 255);
     }
 
+
+    /* 节点 */
+    .tree-node {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 0.5vmin;
+        margin-left: 0vmin;
+        /* white-space: nowrap; */
+        /* overflow: auto; */
+    }
+
+    /* 子节点容器 */
     .tree-children {
         clear: initial;
         margin-left: 4vmin;
@@ -100,28 +107,12 @@
         overflow: auto;
     }
 
-    .tree-node {
-        align-items: center;
-        display: flex;
-        flex-wrap: wrap;
-        margin-top: 0.5vmin;
-        margin-left: 0vmin;
-        white-space: nowrap;
-
-        /* overflow: auto; */
-    }
-
+    /* 树容器 */
     .tree-container {
-        /* display: block; */
-        overflow: auto;
-    }
-
-    .data {
         width: 50vmin;
         height: 60vmin;
         border: 1px solid black;
-        overflow-x: auto;
-        overflow-y: auto;
+        overflow: auto;
     }
 
     .show {
@@ -281,7 +272,11 @@
             // 创建展开按钮 默认为不展示 无子节点则隐藏
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'toggle-btn';
-            toggleBtn.setAttribute('isDisplayed', 'false');
+            if (level === 1)
+                toggleBtn.setAttribute('isDisplayed', 'false');
+            else
+                toggleBtn.setAttribute('isDisplayed', 'true');
+
             toggleBtn.innerText = level === 1 ? '+' : '-';
             if (!nodeData.C || nodeData.C.length === 0) {
                 toggleBtn.style.visibility = 'hidden';
