@@ -93,25 +93,27 @@
     .tree-children {
         clear: initial;
         margin-left: 4vmin;
-        margin-top: 0vmin;
-        flex-direction: column;
-        display: inline-flex;
-        width: 100%;
+        margin-top: 0.5vmin;
+        display: inline;
+        flex-direction: row;
+        width: fit-content;
         overflow: auto;
-
     }
 
     .tree-node {
-        width: 100%;
         align-items: center;
-        display: inline-flex;
+        display: flex;
         flex-wrap: wrap;
         margin-top: 0.5vmin;
         margin-left: 0vmin;
+        white-space: nowrap;
+
+        /* overflow: auto; */
     }
 
     .tree-container {
-        overflow: visible;
+        /* display: block; */
+        overflow: auto;
     }
 
     .data {
@@ -280,7 +282,7 @@
             const toggleBtn = document.createElement('button');
             toggleBtn.className = 'toggle-btn';
             toggleBtn.setAttribute('isDisplayed', 'false');
-            toggleBtn.innerText = level === 1 ? "+" : "-";
+            toggleBtn.innerText = level === 1 ? '+' : '-';
             if (!nodeData.C || nodeData.C.length === 0) {
                 toggleBtn.style.visibility = 'hidden';
             }
