@@ -9,7 +9,15 @@
 
 <body>
     <div class="show">
-        <div class="data"></div>
+        <div class="data">
+            <div class="tree-container">
+                <div class="tree-node">
+                    <button class="toggle-btn" isDisplayed="false">+</button>
+                    <div class="tree-serial">1</div>
+                    <div class="node-data">节点内容</div>
+                </div>
+            </div>
+        </div>
         <div>
             <div class="students">
                 <div class="student" id="female" style="display: flex;">
@@ -38,6 +46,69 @@
 </body>
 
 <style>
+    .node-data {
+        margin-left: 1vmin;
+        color: rgb(85, 85, 85);
+        font-size: larger;
+        align-items: center;
+    }
+
+    .toggle-btn:hover {
+        background-color: rgb(220, 220, 220);
+        cursor: pointer;
+    }
+
+    .toggle-btn[isDisplayed="true"] {
+        background-color: rgb(200, 200, 200);
+    }
+
+    .toggle-btn {
+        font-size: x-large;
+        height: 3vmin;
+        width: 3vmin;
+        border: 1px dotted rgb(136, 136, 136);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1vmin;
+        background-color: white;
+        border-radius: 0.5vmin;
+        margin-right: 1vmin;
+
+    }
+
+    .tree-serial {
+        color: white;
+        height: 4vmin;
+        width: 4vmin;
+        border-radius: 4vmin;
+        text-align: center;
+        line-height: 4vmin;
+        margin-left: 0vmin;
+        background-color: rgb(0, 0, 255);
+    }
+
+    .tree-children {
+        clear: left;
+        margin-left: 4vmin;
+        flex-direction: column;
+        display: block;
+    }
+
+    .tree-node {
+        align-items: center;
+        display: flex;
+        margin-top: 0.5vmin;
+        margin-left: 0vmin;
+
+    }
+
+    .tree-container {
+        overflow: auto;
+        display: block;
+
+    }
+
     .show {
         display: flex;
     }
@@ -52,7 +123,7 @@
         color: red;
         font-size: large;
         font-weight: bolder;
-        border: 1px solid black;
+        /* border: 1px solid black; */
         height: auto;
         width: auto;
         text-align: end;
@@ -62,7 +133,7 @@
     }
 
     .name {
-        border: 1px solid black;
+        /* border: 1px solid black; */
         height: auto;
         width: auto;
         /* margin: 2vmin 0 2vmin 2vmin; */
@@ -71,7 +142,7 @@
     }
 
     .card {
-        border: 1px solid black;
+        /* border: 1px solid black; */
         height: auto;
         width: auto;
         /* margin: 2vmin 0 2vmin 2vmin; */
@@ -81,14 +152,14 @@
 
     .serial {
         color: white;
-        border: 1px solid black;
-        height: 5vmin;
-        width: 10%;
-        border-radius: 5vmin;
+        /* border: 1px solid black; */
+        height: 4vmin;
+        width: 4vmin;
+        border-radius: 4vmin;
         text-align: center;
-        line-height: 5vmin;
+        line-height: 4vmin;
         /* margin: 2vmin 0 2vmin 2vmin; */
-        margin-left: 2vmin;
+        margin-left: 1vmin;
         background-color: rgb(0, 0, 255);
     }
 
@@ -138,11 +209,12 @@
         xhr.send();
         // console.log(xhr.status + ":" + xhr.responseText);
         result = JSON.parse(xhr.responseText);
-        console.log(result);
+        // console.log(result);
         if (result.no === 500) {
             alert(result.msg);
             return;
         }
+
         const students = result.list || [];
         const studentsContainer = document.querySelector('.students');
         studentsContainer.innerHTML = ''; // 清空现有内容
@@ -181,8 +253,90 @@
             studentDiv.appendChild(gradeDiv);
             studentsContainer.appendChild(studentDiv);
         });
-        // 渲染树形图
 
+
+        // 处理树状结构数据
+        const treeData = result.tree || [];
+        console.log(treeData);
+        console.log(treeData.N);
+        console.log(treeData.C);
+        // 生成树状结构
+        const treeContainer = document.querySelector('.tree-container');
+        treeContainer.innerHTML = ''; // 清空现有内容
+        function createTreeNode(nodeData, level = 1) {
+            const treeNodeDiv = document.createElement('div');
+            treeNodeDiv.className = 'tree-node';
+            // 判断是否为根节点 根节点显示 子节点隐藏
+            treeNodeDiv.style.display = level === 1 ? 'flex' : 'none';
+
+            // 创建展开按钮 默认为不展示 无子节点则隐藏
+            const toggleBtn = document.createElement('button');
+            toggleBtn.className = 'toggle-btn';
+            toggleBtn.setAttribute('isDisplayed', 'false');
+            toggleBtn.innerText = '+';
+            if (!nodeData.C || nodeData.C.length === 0) {
+                toggleBtn.style.visibility = 'hidden';
+            }
+
+
+            const treeSerialDiv = document.createElement('div');
+            treeSerialDiv.className = 'tree-serial';
+            treeSerialDiv.innerText = nodeData.id;
+
+            const nodeDataDiv = document.createElement('div');
+            nodeDataDiv.className = 'node-data';
+            nodeDataDiv.innerText = nodeData.N;
+
+            const childrenContainer = document.createElement('div');
+            childrenContainer.className = 'tree-children';
+
+
+            treeNodeDiv.appendChild(toggleBtn);
+            treeNodeDiv.appendChild(treeSerialDiv);
+            treeNodeDiv.appendChild(nodeDataDiv);
+            treeNodeDiv.appendChild(childrenContainer);
+
+            // 递归创建子节点
+            if (nodeData.C && nodeData.C.length > 0) {
+                nodeData.C.forEach(childNode => {
+                    const childTreeNode = createTreeNode(childNode, level + 1);
+                    childrenContainer.appendChild(childTreeNode);
+                });
+            }
+
+            return treeNodeDiv;
+        }
+
+
+        const rootNode = createTreeNode(treeData);
+        treeContainer.appendChild(rootNode);
+
+        // 节点展开按钮
+        const toggleButtons = document.querySelectorAll('.toggle-btn');
+        toggleButtons.forEach(button => {
+            button.onclick = function () {
+                const isDisplayed = this.getAttribute('isDisplayed');
+                if (isDisplayed === 'true') {
+                    this.setAttribute('isDisplayed', 'false');
+                    this.innerText = '+';
+                    // 修改子节点显示状态
+                    const parentNode = this.parentNode;
+                    const childNodes = parentNode.querySelectorAll('.tree-node');
+                    childNodes.forEach(childNode => {
+                        childNode.style.display = 'none';
+                    });
+                } else {
+                    this.setAttribute('isDisplayed', 'true');
+                    this.innerText = '-';
+                    // 修改子节点显示状态
+                    const parentNode = this.parentNode;
+                    const childNodes = parentNode.querySelectorAll('.tree-node');
+                    childNodes.forEach(childNode => {
+                        childNode.style.display = 'flex';
+                    });
+                }
+            };
+        });
     };
 </script>
 
