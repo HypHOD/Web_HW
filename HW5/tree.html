@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HW5</title>
+    <style>
+        .node-data {
+            margin-left: 1vmin;
+            color: rgb(85, 85, 85);
+            font-size: larger;
+            align-items: center;
+            overflow: hidden;
+            width: fit-content;
+        }
+
+        .toggle-btn:hover {
+            background-color: rgb(220, 220, 220);
+            cursor: pointer;
+        }
+
+        .toggle-btn[isDisplayed="true"] {
+            background-color: rgb(200, 200, 200);
+        }
+
+        .toggle-btn {
+            font-size: x-large;
+            height: 3vmin;
+            width: 3vmin;
+            border: 1px dotted rgb(136, 136, 136);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1vmin;
+            background-color: white;
+            border-radius: 0.5vmin;
+            margin-right: 1vmin;
+        }
+
+        .tree-serial {
+            color: white;
+            height: 4vmin;
+            width: 4vmin;
+            border-radius: 4vmin;
+            text-align: center;
+            line-height: 4vmin;
+            margin-left: 0vmin;
+            background-color: rgb(0, 0, 255);
+        }
+
+        .node-content {
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+
+        .tree-node {
+            display: block;
+            margin-top: 0.5vmin;
+            margin-left: 0vmin;
+            white-space: nowrap;
+            overflow: auto;
+        }
+
+        .tree-children {
+            margin-left: 6vmin;
+            margin-top: 0.5vmin;
+            display: none;
+            width: fit-content;
+            overflow: auto;
+        }
+
+        .tree-container {
+            width: 100vmin;
+            height: 60vmin;
+            border: 1px solid black;
+            overflow: auto;
+        }
+
+        .show {
+            display: flex;
+        }
+
+        .student {
+            display: flex;
+            align-items: center;
+            margin-top: 1.5vmin;
+        }
+
+        .grade {
+            color: red;
+            font-size: large;
+            font-weight: bolder;
+            height: auto;
+            width: auto;
+            text-align: end;
+            line-height: 5vmin;
+            margin-left: auto;
+            margin-right: 1vmin;
+        }
+
+        .name {
+            height: auto;
+            width: auto;
+            margin-left: 1vmin;
+        }
+
+        .card {
+            height: auto;
+            width: auto;
+            margin-left: 1vmin;
+        }
+
+        .serial {
+            color: white;
+            height: 4vmin;
+            width: 4vmin;
+            border-radius: 4vmin;
+            text-align: center;
+            line-height: 4vmin;
+            margin-left: 1vmin;
+            background-color: rgb(0, 0, 255);
+        }
+
+        #female .serial {
+            background-color: rgb(255, 0, 255);
+        }
+
+        #passed {
+            color: rgb(1, 171, 1);
+        }
+
+        #failed {
+            color: rgb(255, 0, 0);
+        }
+
+        .students {
+            margin: 0 0 0 2vmin;
+            width: 50vmin;
+            height: 45vmin;
+            border: 1px solid black;
+            display: block;
+            overflow: auto;
+        }
+
+        .load {
+            display: block;
+            margin: 2vmin auto 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="show">
+        <div class="tree-container">
+            <div class="tree-node"></div>
+        </div>
+        <div>
+            <div class="students" style="display: none;">
+                <div class="student" id="female" style="display: flex;">
+                    <div class="serial">1</div>
+                    <div class="card">#12314142</div>
+                    <div class="name">Alex</div>
+                    <div class="grade" id="failed">0</div>
+                </div>
+                <div class="student" id="male" style="display: flex;">
+                    <div class="serial">1</div>
+                    <div class="card">#12314142</div>
+                    <div class="name">Alex</div>
+                    <div class="grade" id="passed">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <button class="load">Load Data</button>
+
+    <script>
+        document.querySelector('.load').onclick = function () {
+            // 1. 显示学生列表容器（初始隐藏，加载后必须显示）
+            document.querySelector('.students').style.display = 'block';
+
+            // 2. 原生AJAX请求数据
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://ext.gaomuxuexi.com:5870/task/random", false);
+            xhr.send();
+            result = JSON.parse(xhr.responseText);
+            if (result.no === 500) {
+                alert(result.msg);
+                return;
+            }
+
+            // 3. 处理学生列表（逻辑不变）
+            const students = result.list || [];
+            const studentsContainer = document.querySelector('.students');
+            studentsContainer.innerHTML = '';
+            students.forEach((student, index) => {
+                const studentDiv = document.createElement('div');
+                studentDiv.className = 'student';
+                studentDiv.id = student.gender === 1 ? 'female' : 'male';
+                studentDiv.style.display = 'flex';
+
+                const serialDiv = document.createElement('div');
+                serialDiv.className = 'serial';
+                serialDiv.innerText = index + 1;
+                if (index === 0) serialDiv.style.backgroundColor = 'rgb(255, 0, 255)';
+
+                const cardDiv = document.createElement('div');
+                cardDiv.className = 'card';
+                cardDiv.innerText = "#" + student.sno;
+
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'name';
+                nameDiv.innerText = student.name;
+
+                const gradeDiv = document.createElement('div');
+                gradeDiv.className = 'grade';
+                gradeDiv.id = student.score >= 60 ? 'passed' : 'failed';
+                gradeDiv.innerText = student.score;
+
+                studentDiv.append(serialDiv, cardDiv, nameDiv, gradeDiv);
+                studentsContainer.appendChild(studentDiv);
+            });
+
+            // 4. 处理树状结构数据（核心修复）
+            const treeData = result.tree || [];
+            const treeContainer = document.querySelector('.tree-container');
+            treeContainer.innerHTML = '';
+
+            // 递归创建树节点
+            function createTreeNode(nodeData) {
+                const treeNodeDiv = document.createElement('div');
+                treeNodeDiv.className = 'tree-node';
+
+                // 展开/折叠按钮：所有节点统一初始状态（折叠）
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = 'toggle-btn';
+                toggleBtn.setAttribute('isDisplayed', 'false'); // 初始折叠
+                toggleBtn.innerText = '+'; // 初始显示+
+                // 无子节点则隐藏按钮
+                if (!nodeData.C || nodeData.C.length === 0) {
+                    toggleBtn.style.visibility = 'hidden';
+                }
+
+                // 节点内容（按钮+序号+文本）
+                const treeSerialDiv = document.createElement('div');
+                treeSerialDiv.className = 'tree-serial';
+                treeSerialDiv.innerText = nodeData.id;
+
+                const nodeDataDiv = document.createElement('div');
+                nodeDataDiv.className = 'node-data';
+                nodeDataDiv.innerText = nodeData.N;
+
+                const nodeContentDiv = document.createElement('div');
+                nodeContentDiv.className = 'node-content';
+                nodeContentDiv.append(toggleBtn, treeSerialDiv, nodeDataDiv);
+
+                // 子节点容器：初始隐藏（通过CSS控制）
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'tree-children';
+
+                // 组装节点
+                treeNodeDiv.append(nodeContentDiv, childrenContainer);
+
+                // 递归创建子节点（子节点默认显示，随容器隐藏/显示）
+                if (nodeData.C && nodeData.C.length > 0) {
+                    nodeData.C.forEach(childNode => {
+                        childrenContainer.appendChild(createTreeNode(childNode));
+                    });
+                }
+
+                return treeNodeDiv;
+            }
+
+            // 创建根节点并添加到容器
+            const rootNode = createTreeNode(treeData);
+            treeContainer.appendChild(rootNode);
+
+            // 5. 绑定展开/折叠事件（简化且精准）
+            const toggleButtons = document.querySelectorAll('.toggle-btn');
+            toggleButtons.forEach(button => {
+                button.onclick = function () {
+                    const isDisplayed = this.getAttribute('isDisplayed');
+                    const childrenContainer = this.closest('.tree-node').querySelector('.tree-children');
+
+                    if (isDisplayed === 'false') {
+                        // 展开：显示子节点容器
+                        this.setAttribute('isDisplayed', 'true');
+                        this.innerText = '-';
+                        childrenContainer.style.display = 'block';
+                    } else {
+                        // 折叠：隐藏子节点容器
+                        this.setAttribute('isDisplayed', 'false');
+                        this.innerText = '+';
+                        childrenContainer.style.display = 'none';
+                    }
+                };
+            });
+        };
+    </script>
+
+</body>
+
+</html>
