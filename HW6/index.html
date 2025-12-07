@@ -4,33 +4,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HW5</title>
+    <title>HW6</title>
 </head>
 
 <body>
-    <div class="show">
-        <div class="tree-container">
-            <div class="tree-node"></div>
-        </div>
-        <div>
-            <div class="students">
-                <div class="student" id="female" style="display: flex;">
-                    <div class="serial">1</div>
-                    <div class="card">#12314142</div>
-                    <div class="name">Alex</div>
-                    <div class="grade" id="failed">0</div>
-                </div>
-
-                <div class="student" id="male" style="display: flex;">
-                    <div class="serial">1</div>
-                    <div class="card">#12314142</div>
-                    <div class="name">Alex</div>
-                    <div class="grade" id="passed">0</div>
-                </div>
+    <div>
+        <div class="show">
+            <div class="tree-container">
+                <div class="tree-node"></div>
             </div>
-            <button class="load">Load Data</button>
+            <div class="lists"></div>
+        </div>
+        <div class="btn-dialog"
+            style="margin-top: 1vmin; display:flex; margin-left: auto; justify-content: flex-end; gap: 5px;">
+            <button class="download">刷新</button>
+            <button class="upload">提交</button>
         </div>
     </div>
+
 
 
 
@@ -73,10 +64,59 @@
         color: white;
         height: 4vmin;
         width: 4vmin;
+        /* border-radius: 4vmin; */
+        text-align: center;
+        line-height: 4vmin;
+        margin-left: 0vmin;
+        border: 1px solid blue;
+        /* background-color: rgb(0, 0, 255); */
+    }
+
+    .tree-serial-type1 {
+        /* color: white; */
+        height: 4vmin;
+        width: 4vmin;
         border-radius: 4vmin;
         text-align: center;
         line-height: 4vmin;
         margin-left: 0vmin;
+        border: 1px solid blue;
+        /* background-color: rgb(0, 0, 255); */
+    }
+
+    .tree-serial-type2 {
+        /* color: white; */
+        height: 4vmin;
+        width: 4vmin;
+        /* border-radius: 4vmin; */
+        text-align: center;
+        line-height: 4vmin;
+        margin-left: 0vmin;
+        border: 1px solid blue;
+        /* background-color: rgb(0, 0, 255); */
+    }
+
+    .tree-serial-type3 {
+        /* color: white; */
+        height: 4vmin;
+        width: 4vmin;
+        /* border-radius: 4vmin; */
+        text-align: center;
+        line-height: 4vmin;
+        margin-left: 0vmin;
+        border: 1px solid blue;
+        /* background-color: rgb(0, 0, 255); */
+    }
+
+    .tree-serial-type4 {
+        /* color: white; */
+        height: 4vmin;
+        width: 4vmin;
+        /* border-radius: 4vmin; */
+        text-align: center;
+        line-height: 4vmin;
+        margin-left: 0vmin;
+        border: 1px solid blue;
         background-color: rgb(0, 0, 255);
     }
 
@@ -105,7 +145,7 @@
     }
 
     .tree-container {
-        width: 50vmin;
+        width: 60%;
         height: 60vmin;
         border: 1px solid black;
         overflow: auto;
@@ -115,119 +155,96 @@
         display: flex;
     }
 
-    .student {
+    .list-content {
         display: flex;
         align-items: center;
-        margin-top: 1.5vmin;
+        white-space: nowrap;
     }
 
-    .grade {
-        color: red;
-        font-size: large;
-        font-weight: bolder;
-        height: auto;
-        width: auto;
-        text-align: end;
-        line-height: 5vmin;
-        margin-left: auto;
-        margin-right: 1vmin;
+    .list {
+        display: flex;
+        margin: 3vmin 1vmin 1vmin 1vmin;
+        margin-left: 3vmin;
+        margin-top: 0.5vmin;
+        white-space: nowrap;
+        overflow: auto;
+        width: fit-content;
+        align-items: center;
     }
 
-    .name {
-        height: auto;
-        width: auto;
-        margin-left: 1vmin;
-    }
-
-    .card {
-        height: auto;
-        width: auto;
-        margin-left: 1vmin;
-    }
-
-    .serial {
-        color: white;
-        height: 4vmin;
-        width: 4vmin;
-        border-radius: 4vmin;
-        text-align: center;
-        line-height: 4vmin;
-        margin-left: 1vmin;
-        background-color: rgb(0, 0, 255);
-    }
-
-    #female .serial {
-        background-color: rgb(255, 0, 255);
-    }
-
-    #passed {
-        color: rgb(1, 171, 1);
-    }
-
-    #failed {
-        color: rgb(255, 0, 0);
-    }
-
-    .students {
+    .lists {
         margin: 0 0 0 2vmin;
-        width: 50vmin;
-        height: 45vmin;
+        width: 40%;
+        height: 60vmin;
         border: 1px solid black;
         display: block;
         overflow: auto;
     }
-
-    .load {
-        display: block;
-        margin: 2vmin auto 0 auto;
-    }
 </style>
 
 <script>
-    document.querySelector('.load').onclick = function () {
+    // 提交按钮
+    document.querySelector('.upload').onclick = function () {
+        console.log("click upload Btn");
+
+        //新建ajax实例
+        var xhrUpload = new XMLHttpRequest();
+        const uploadURL = "http://ext.gaomuxuexi.com:5870/task/nodesCommit";
+        xhrUpload.open("POST", uploadURL, true);
+
+        //设置请求头
+        xhrUpload.setRequestHeader("Content-Type", "application/x-www-form-urlencoded;charset=utf-8");
+
+        //监听响应
+        xhrUpload.onload = function () {
+            const rawData = xhr.responseText;
+            console.log("返回数据" + rawData);
+        }
+
+    }
+
+    // 刷新按钮
+    document.querySelector('.download').onclick = function () {
         // 1. 显示学生列表容器
-        document.querySelector('.students').style.display = 'block';
+        document.querySelector('.lists').style.display = 'block';
 
         // 2. 原生AJAX请求数据
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "http://ext.gaomuxuexi.com:5870/task/random", false);
+        xhr.open("GET", "http://ext.gaomuxuexi.com:5870/task/nodes", false);
         xhr.send();
         result = JSON.parse(xhr.responseText);
         if (result.no === 500) {
             alert(result.msg);
             return;
         }
-
-        // 3. 处理学生列表
-        const students = result.list || [];
-        const studentsContainer = document.querySelector('.students');
-        studentsContainer.innerHTML = '';
-        students.forEach((student, index) => {
-            const studentDiv = document.createElement('div');
-            studentDiv.className = 'student';
-            studentDiv.id = student.gender === 1 ? 'female' : 'male';
-            studentDiv.style.display = 'flex';
+        console.log(result);
+        // 3. 处理列表
+        const lists = result.list || [];
+        const listsContainer = document.querySelector('.lists');
+        listsContainer.innerHTML = '';
+        lists.forEach((list, index) => {
+            const listDiv = document.createElement('div');
+            listDiv.className = "list";
 
             const serialDiv = document.createElement('div');
-            serialDiv.className = 'serial';
+            // todo 修改图标
+            if (list.type === 1) {
+                serialDiv.className = 'tree-serial-type1';
+            } else if (list.type === 2) {
+                serialDiv.className = 'tree-serial-type2';
+            } else if (list.type === 3) {
+                serialDiv.className = 'tree-serial-type3';
+            } else {
+                serialDiv.className = 'tree-serial-type4';
+            }
             serialDiv.innerText = index + 1;
-            if (index === 0) serialDiv.style.backgroundColor = 'rgb(255, 0, 255)';
 
             const cardDiv = document.createElement('div');
-            cardDiv.className = 'card';
-            cardDiv.innerText = "#" + student.sno;
+            cardDiv.className = 'list-content';
+            cardDiv.innerText = list.N;
 
-            const nameDiv = document.createElement('div');
-            nameDiv.className = 'name';
-            nameDiv.innerText = student.name;
-
-            const gradeDiv = document.createElement('div');
-            gradeDiv.className = 'grade';
-            gradeDiv.id = student.score >= 60 ? 'passed' : 'failed';
-            gradeDiv.innerText = student.score;
-
-            studentDiv.append(serialDiv, cardDiv, nameDiv, gradeDiv);
-            studentsContainer.appendChild(studentDiv);
+            listDiv.append(serialDiv, cardDiv);
+            listsContainer.appendChild(listDiv);
         });
 
         const treeData = result.tree || [];
@@ -248,8 +265,23 @@
             }
 
             const treeSerialDiv = document.createElement('div');
-            treeSerialDiv.className = 'tree-serial';
-            treeSerialDiv.innerText = nodeData.id;
+            // todo 根据type0-4选择显示图形
+            /*
+            1-空心圆形
+            2-实心圆形
+            3-空心方形
+            4-实心方形
+            */
+            // treeSerialDiv.innerText = nodeData.type;
+            if (nodeData.type === 1) {
+                treeSerialDiv.className = 'tree-serial-type1';
+            } else if (nodeData.type === 2) {
+                treeSerialDiv.className = 'tree-serial-type2';
+            } else if (nodeData.type === 3) {
+                treeSerialDiv.className = 'tree-serial-type3';
+            } else {
+                treeSerialDiv.className = 'tree-serial-type4';
+            }
 
             const nodeDataDiv = document.createElement('div');
             nodeDataDiv.className = 'node-data';
