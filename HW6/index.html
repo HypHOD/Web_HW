@@ -157,15 +157,19 @@
 
     .list-content {
         display: flex;
-        align-items: center;
         white-space: nowrap;
+        margin-left: 1vmin;
+        color: rgb(85, 85, 85);
+        font-size: larger;
+        align-items: center;
+        overflow: hidden;
+        width: fit-content;
     }
 
     .list {
         display: flex;
-        margin: 3vmin 1vmin 1vmin 1vmin;
-        margin-left: 3vmin;
         margin-top: 0.5vmin;
+        margin-left: 1.5vmin;
         white-space: nowrap;
         overflow: auto;
         width: fit-content;
@@ -237,7 +241,7 @@
             } else {
                 serialDiv.className = 'tree-serial-type4';
             }
-            serialDiv.innerText = index + 1;
+            // serialDiv.innerText = index + 1;
 
             const cardDiv = document.createElement('div');
             cardDiv.className = 'list-content';
