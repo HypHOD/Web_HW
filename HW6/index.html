@@ -11,7 +11,9 @@
     <div>
         <div class="show">
             <div class="tree-container">
-                <div class="tree-node"></div>
+                <div class="tree-node">
+                    <div class="tree-serial-type0"></div>
+                </div>
             </div>
             <div class="lists"></div>
         </div>
@@ -63,6 +65,52 @@
             background-color: white;
             border-radius: 0.5vmin;
             margin-right: 1vmin;
+        }
+
+        .tree-serial-type0 {
+            width: 4vmin;
+            height: 4vmin;
+            background-color: #ffd700;
+            /* 星星颜色 */
+            /* 核心：通过顶点坐标定义四尖星形状（10个顶点，对称分布） */
+
+            clip-path: polygon(50% 0%,
+                    /* 1. 上尖角（最顶端） */
+                    61% 35%,
+                    /* 2. 右上过渡点（连接上尖角和右尖角） */
+                    98% 35%,
+                    /* 3. 右尖角（最右端） */
+                    68% 57%,
+                    /* 4. 右下过渡点（连接右尖角和下尖角） */
+                    79% 91%,
+                    /* 5. 下尖角（最底端） */
+                    50% 70%,
+                    /* 6. 左下过渡点（连接下尖角和左尖角） */
+                    21% 91%,
+                    /* 7. 左尖角（最左端） */
+                    32% 57%,
+                    /* 8. 左上过渡点（连接左尖角和上尖角） */
+                    2% 35%,
+                    /* 9. 左过渡补充（确保左侧对称） */
+                    39% 35%
+                    /* 10. 左上过渡补充（闭合路径） */
+                );
+            transition: clip-path 0.5s ease;
+            transform-origin: center;
+        }
+
+        .tree-serial-type0:hover {
+            transform: rotate(360deg);
+        }
+
+        @keyframes rotateNonStop {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .tree-serial-type1 {
@@ -220,7 +268,7 @@
         let treePlaceholder = null;
         let treeData = null;
 
-        // -------------------------- 全局核心函数（修复作用域问题）--------------------------
+        // -------------------------- 全局核心函数--------------------------
         // 1. 全局创建树节点函数（原局部函数移到全局，避免无法访问）
         function createTreeNode(nodeData) {
             const treeNodeDiv = document.createElement('div');
@@ -677,14 +725,28 @@
                 }
             });
 
+            // // 列表容器dragleave
+            // listsContainer.addEventListener('dragleave', (e) => {
+            //     if (e.target === listsContainer) {
+            //         listsContainer.style.backgroundColor = 'transparent';
+            //     }
+            // });
+
             // 列表容器dragleave
             listsContainer.addEventListener('dragleave', (e) => {
-                if (e.target === listsContainer) {
+                // 只有当鼠标完全离开列表容器时，才恢复背景, 避免内部元素触发误清理
+                const relatedTarget = e.relatedTarget;
+                if (!relatedTarget || !listsContainer.contains(relatedTarget)) {
                     listsContainer.style.backgroundColor = 'transparent';
+                    // 离开容器时移除占位符
+                    if (placeholder) {
+                        placeholder.remove();
+                        placeholder = null;
+                    }
                 }
             });
 
-            // 列表容器dragover（添加passive: false，修复浏览器兼容性）
+            // 列表容器dragover
             listsContainer.addEventListener('dragover', (e) => {
                 e.preventDefault();
                 const targetItem = getListDragTarget(e);
@@ -704,7 +766,7 @@
                 }
             }, { passive: false });
 
-            // 列表容器drop（核心修复：避免重复创建、精准删除树节点）
+            // 列表容器drop, 避免重复创建
             listsContainer.addEventListener('drop', (e) => {
                 e.preventDefault();
                 const targetItem = getListDragTarget(e);
