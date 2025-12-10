@@ -452,8 +452,10 @@
                     N: '默认根节点',
                     type: 1,
                     C: []
-                });
+                }, true);
                 treeContainer.appendChild(defaultRoot);
+                // todo 修改默认根结点的serial
+
             }
 
             // 绑定树容器拖拽事件（会绑定新的事件）
@@ -946,7 +948,7 @@
                             N: '默认根节点',
                             type: 1,
                             C: []
-                        });
+                        }, true);
                         treeContainer.appendChild(defaultRoot);
                         // 重新绑定树容器事件（因为之前清理过）
                         bindTreeContainerDragEvents();
