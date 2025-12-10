@@ -11,7 +11,9 @@
     <div>
         <div class="show">
             <div class="tree-container">
-                <div class="tree-node"></div>
+                <div class="tree-node">
+                    <div class="tree-serial-type0"></div>
+                </div>
             </div>
             <div class="lists"></div>
         </div>
@@ -63,6 +65,41 @@
             background-color: white;
             border-radius: 0.5vmin;
             margin-right: 1vmin;
+        }
+
+        .tree-serial-type0 {
+            width: 4vmin;
+            height: 4vmin;
+            background-color: #ffd700;
+            /* 星星颜色 */
+            /* 核心：通过顶点坐标定义四尖星形状（10个顶点，对称分布） */
+
+            clip-path: polygon(50% 0%,
+                    61% 35%,
+                    98% 35%,
+                    68% 57%,
+                    79% 91%,
+                    50% 70%,
+                    21% 91%,
+                    32% 57%,
+                    2% 35%,
+                    39% 35%);
+            transition: clip-path 0.5s ease;
+            transform-origin: center;
+        }
+
+        .tree-serial-type0:hover {
+            animation: rotateNonStop 1s linear infinite;
+        }
+
+        @keyframes rotateNonStop {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .tree-serial-type1 {
@@ -219,10 +256,22 @@
         let draggedTreeNode = null;
         let treePlaceholder = null;
         let treeData = null;
+        let isDragging = false;
+        let dropHandled = false;
 
-        // -------------------------- 全局核心函数（修复作用域问题）--------------------------
-        // 1. 全局创建树节点函数（原局部函数移到全局，避免无法访问）
-        function createTreeNode(nodeData) {
+        // 存储事件处理函数引用，用于刷新时解绑
+        let treeDragOverHandler = null;
+        let treeDropHandler = null;
+        let treeDragEnterHandler = null;
+        let treeDragLeaveHandler = null;
+        let listDragEnterHandler = null;
+        let listDragLeaveHandler = null;
+        let listDragOverHandler = null;
+        let listDropHandler = null;
+
+        // -------------------------- 全局核心函数--------------------------
+        // 1. 全局创建树节点函数
+        function createTreeNode(nodeData, isRoot = false) {
             const treeNodeDiv = document.createElement('div');
             treeNodeDiv.className = 'tree-node';
             // 确保节点ID唯一（兼容接口返回和手动创建）
@@ -237,9 +286,11 @@
                 toggleBtn.style.visibility = 'hidden';
             }
 
-            // 图标样式优化（匹配type定义：1-空心圆，2-实心圆，3-空心方，4-实心方）
+            // 图标样式优化
             const treeSerialDiv = document.createElement('div');
-            if (nodeData.type === 1) {
+            if (isRoot) {
+                treeSerialDiv.className = 'tree-serial-type0';
+            } else if (nodeData.type === 1) {
                 treeSerialDiv.className = 'tree-serial-type1';
             } else if (nodeData.type === 2) {
                 treeSerialDiv.className = 'tree-serial-type2';
@@ -269,7 +320,7 @@
                 });
             }
 
-            // 绑定展开/折叠事件（全局绑定，确保所有节点生效）
+            // 绑定展开/折叠事件
             toggleBtn.addEventListener('click', function () {
                 const isDisplayed = this.getAttribute('isDisplayed');
                 const childrenContainer = this.closest('.tree-node').querySelector('.tree-children');
@@ -284,8 +335,10 @@
                 }
             });
 
-            // 绑定拖拽事件（单个节点）
-            nodeContentDiv.addEventListener('dragstart', (e) => {
+            // 绑定拖拽事件（使用命名函数，方便后续移除）
+            function handleNodeDragStart(e) {
+                if (isDragging) return;
+                isDragging = true;
                 draggedTreeNode = treeNodeDiv;
                 setTimeout(() => treeNodeDiv.classList.add('dragging'), 0);
                 e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -293,21 +346,31 @@
                     listCompatible: true,
                     data: { ...nodeData, id: nodeId }
                 }));
-            });
+            }
 
-            nodeContentDiv.addEventListener('dragend', () => {
+            function handleNodeDragEnd() {
+                isDragging = false;
                 draggedTreeNode = null;
                 treeNodeDiv.classList.remove('dragging');
                 if (treePlaceholder) treePlaceholder.remove();
                 treePlaceholder = null;
                 document.querySelectorAll('.node-content.drop-target').forEach(el => el.classList.remove('drop-target'));
+            }
+
+            nodeContentDiv.addEventListener('dragstart', handleNodeDragStart);
+            nodeContentDiv.addEventListener('dragend', handleNodeDragEnd);
+
+            // 存储事件处理函数引用，便于后续清理
+            treeNodeDiv.dataset.dragHandlers = JSON.stringify({
+                start: handleNodeDragStart,
+                end: handleNodeDragEnd
             });
 
             nodeContentDiv.draggable = true;
             return treeNodeDiv;
         }
 
-        // 2. 优化唯一ID生成（彻底解决ID重复问题）
+        // 2. 优化唯一ID生成
         function generateUniqueId() {
             return 'node_' + Date.now() + '_' + Math.floor(Math.random() * 1000000) + '_' + Math.random().toString(36).substr(2, 8);
         }
@@ -346,6 +409,9 @@
         }
 
         document.querySelector('.download').onclick = function () {
+            // 关键修复：刷新前先清理所有旧的拖拽事件绑定
+            cleanUpDragEvents();
+
             document.querySelector('.lists').style.display = 'block';
 
             // 请求数据
@@ -367,23 +433,21 @@
                 const listDiv = createListItem(list, index);
                 listsContainer.appendChild(listDiv);
             });
+            // 初始化列表拖拽（会绑定新的事件）
             initListDragAndDrop();
 
-            // 渲染树（使用全局createTreeNode）
+            // 渲染树
             const treeData = result.tree || [];
             const treeContainer = document.querySelector('.tree-container');
             treeContainer.innerHTML = '';
             if (treeData && treeData.N) {
-                // 接口返回单个根节点
-                const rootNode = createTreeNode(treeData);
+                const rootNode = createTreeNode(treeData, true);
                 treeContainer.appendChild(rootNode);
             } else if (Array.isArray(treeData) && treeData.length > 0) {
-                // 接口返回多个根节点（罕见情况）
                 treeData.forEach(root => {
-                    treeContainer.appendChild(createTreeNode(root));
+                    treeContainer.appendChild(createTreeNode(root, true));
                 });
             } else {
-                // 空树时创建默认根节点
                 const defaultRoot = createTreeNode({
                     N: '默认根节点',
                     type: 1,
@@ -392,17 +456,96 @@
                 treeContainer.appendChild(defaultRoot);
             }
 
-            // 绑定树容器拖拽事件（全局事件，无需重复绑定节点事件）
+            // 绑定树容器拖拽事件（会绑定新的事件）
             bindTreeContainerDragEvents();
+
+            // 重置拖拽状态变量
+            isDragging = false;
+            dropHandled = false;
+            draggedTreeNode = null;
+            treePlaceholder = null;
         };
 
+        // -------------------------- 清理拖拽事件函数（新增）--------------------------
+        function cleanUpDragEvents() {
+            const treeContainer = document.querySelector('.tree-container');
+            const listsContainer = document.querySelector('.lists');
+
+            // 1. 解绑树容器的拖拽事件
+            if (treeDragOverHandler) {
+                treeContainer.removeEventListener('dragover', treeDragOverHandler);
+                treeDragOverHandler = null;
+            }
+            if (treeDropHandler) {
+                treeContainer.removeEventListener('drop', treeDropHandler);
+                treeDropHandler = null;
+            }
+            if (treeDragEnterHandler) {
+                treeContainer.removeEventListener('dragenter', treeDragEnterHandler);
+                treeDragEnterHandler = null;
+            }
+            if (treeDragLeaveHandler) {
+                treeContainer.removeEventListener('dragleave', treeDragLeaveHandler);
+                treeDragLeaveHandler = null;
+            }
+
+            // 2. 解绑列表容器的拖拽事件
+            if (listDragEnterHandler) {
+                listsContainer.removeEventListener('dragenter', listDragEnterHandler);
+                listDragEnterHandler = null;
+            }
+            if (listDragLeaveHandler) {
+                listsContainer.removeEventListener('dragleave', listDragLeaveHandler);
+                listDragLeaveHandler = null;
+            }
+            if (listDragOverHandler) {
+                listsContainer.removeEventListener('dragover', listDragOverHandler);
+                listDragOverHandler = null;
+            }
+            if (listDropHandler) {
+                listsContainer.removeEventListener('drop', listDropHandler);
+                listDropHandler = null;
+            }
+
+            // 3. 解绑所有树节点的拖拽事件
+            const allTreeNodes = document.querySelectorAll('.tree-node');
+            allTreeNodes.forEach(node => {
+                const nodeContent = node.querySelector('.node-content');
+                if (node.dataset.dragHandlers) {
+                    const handlers = JSON.parse(node.dataset.dragHandlers);
+                    if (handlers.start && typeof handlers.start === 'function') {
+                        nodeContent.removeEventListener('dragstart', handlers.start);
+                    }
+                    if (handlers.end && typeof handlers.end === 'function') {
+                        nodeContent.removeEventListener('dragend', handlers.end);
+                    }
+                    node.removeAttribute('data-drag-handlers');
+                }
+            });
+
+            // 4. 解绑所有列表项的拖拽事件
+            const allListItems = document.querySelectorAll('.list');
+            allListItems.forEach(item => {
+                if (item.dataset.dragHandlers) {
+                    const handlers = JSON.parse(item.dataset.dragHandlers);
+                    if (handlers.start && typeof handlers.start === 'function') {
+                        item.removeEventListener('dragstart', handlers.start);
+                    }
+                    if (handlers.end && typeof handlers.end === 'function') {
+                        item.removeEventListener('dragend', handlers.end);
+                    }
+                    item.removeAttribute('data-drag-handlers');
+                }
+            });
+        }
+
         // -------------------------- 树相关逻辑 --------------------------
-        // 树容器拖拽事件（全局绑定，避免重复绑定）
+        // 树容器拖拽事件（使用命名函数存储引用）
         function bindTreeContainerDragEvents() {
             const treeContainer = document.querySelector('.tree-container');
 
-            // 树容器dragover
-            treeContainer.addEventListener('dragover', (e) => {
+            // 存储事件处理函数引用
+            treeDragOverHandler = function (e) {
                 e.preventDefault();
                 const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
                 const targetNode = getTreeTarget(e);
@@ -438,10 +581,9 @@
                 } else {
                     treeContainer.appendChild(treePlaceholder);
                 }
-            });
+            };
 
-            // 树容器drop
-            treeContainer.addEventListener('drop', (e) => {
+            treeDropHandler = function (e) {
                 e.preventDefault();
                 const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
                 const targetNode = getTreeTarget(e);
@@ -461,23 +603,27 @@
                 }
 
                 updateTreeData();
-            });
+            };
 
-            // 树容器dragenter（列表→树时高亮）
-            treeContainer.addEventListener('dragenter', (e) => {
+            treeDragEnterHandler = function (e) {
                 e.preventDefault();
                 const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
                 if (dragData.type === 'listItem') {
                     treeContainer.classList.add('drop-target');
                 }
-            });
+            };
 
-            // 树容器dragleave
-            treeContainer.addEventListener('dragleave', (e) => {
+            treeDragLeaveHandler = function (e) {
                 if (e.target === treeContainer) {
                     treeContainer.classList.remove('drop-target');
                 }
-            });
+            };
+
+            // 绑定事件
+            treeContainer.addEventListener('dragover', treeDragOverHandler);
+            treeContainer.addEventListener('drop', treeDropHandler);
+            treeContainer.addEventListener('dragenter', treeDragEnterHandler);
+            treeContainer.addEventListener('dragleave', treeDragLeaveHandler);
         }
 
         // 列表→树：创建树节点
@@ -509,7 +655,7 @@
                 treeContainer.appendChild(newTreeNode);
             }
 
-            // 从列表移除原项（精准匹配ID，避免重复移除）
+            // 从列表移除原项（精准匹配ID）
             const listItems = document.querySelectorAll('.list');
             listItems.forEach(item => {
                 const itemData = JSON.parse(item.dataset.listFullData || '{}');
@@ -622,12 +768,11 @@
         }
 
         // -------------------------- 列表相关逻辑 --------------------------
-        // 创建列表项（抽离为单独函数，避免重复代码）
+        // 创建列表项（使用命名函数存储事件引用）
         function createListItem(listData, index) {
             const listDiv = document.createElement('div');
             listDiv.className = "list";
             listDiv.draggable = true;
-            // 给列表项添加唯一ID（用于精准匹配移除）
             const itemId = listData.id || generateUniqueId();
             listDiv.dataset.listFullData = JSON.stringify({ ...listData, id: itemId });
             listDiv.dataset.index = index;
@@ -644,8 +789,10 @@
 
             listDiv.append(serialDiv, cardDiv);
 
-            // 绑定列表项拖拽事件
-            listDiv.addEventListener('dragstart', (e) => {
+            // 绑定拖拽事件（使用命名函数）
+            function handleListDragStart(e) {
+                if (isDragging) return;
+                isDragging = true;
                 setTimeout(() => listDiv.classList.add('dragging'), 0);
                 const data = JSON.parse(listDiv.dataset.listFullData || '{}');
                 e.dataTransfer.setData('text/plain', JSON.stringify({
@@ -653,12 +800,22 @@
                     data: data,
                     index: listDiv.dataset.index
                 }));
-            });
+            }
 
-            listDiv.addEventListener('dragend', () => {
+            function handleListDragEnd() {
+                isDragging = false;
                 listDiv.classList.remove('dragging');
                 const placeholder = document.querySelector('.list-placeholder');
                 if (placeholder) placeholder.remove();
+            }
+
+            listDiv.addEventListener('dragstart', handleListDragStart);
+            listDiv.addEventListener('dragend', handleListDragEnd);
+
+            // 存储事件处理函数引用
+            listDiv.dataset.dragHandlers = JSON.stringify({
+                start: handleListDragStart,
+                end: handleListDragEnd
             });
 
             return listDiv;
@@ -668,24 +825,28 @@
             const listsContainer = document.querySelector('.lists');
             let placeholder = null;
 
-            // 列表容器dragenter
-            listsContainer.addEventListener('dragenter', (e) => {
+            // 存储事件处理函数引用
+            listDragEnterHandler = function (e) {
                 e.preventDefault();
                 const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
                 if (dragData.type === 'listItem' || (dragData.type === 'treeNode' && dragData.listCompatible)) {
                     listsContainer.style.backgroundColor = '#f5fafe';
                 }
-            });
+            };
 
-            // 列表容器dragleave
-            listsContainer.addEventListener('dragleave', (e) => {
-                if (e.target === listsContainer) {
+            listDragLeaveHandler = function (e) {
+                const relatedTarget = e.relatedTarget;
+                if (!relatedTarget || !listsContainer.contains(relatedTarget)) {
                     listsContainer.style.backgroundColor = 'transparent';
+                    if (placeholder) {
+                        placeholder.remove();
+                        placeholder = null;
+                    }
+                    dropHandled = false;
                 }
-            });
+            };
 
-            // 列表容器dragover（添加passive: false，修复浏览器兼容性）
-            listsContainer.addEventListener('dragover', (e) => {
+            listDragOverHandler = function (e) {
                 e.preventDefault();
                 const targetItem = getListDragTarget(e);
                 const mouseY = e.clientY;
@@ -702,11 +863,13 @@
                 } else {
                     listsContainer.appendChild(placeholder);
                 }
-            }, { passive: false });
+            };
 
-            // 列表容器drop（核心修复：避免重复创建、精准删除树节点）
-            listsContainer.addEventListener('drop', (e) => {
+            listDropHandler = function (e) {
                 e.preventDefault();
+                if (dropHandled) return;
+                dropHandled = true;
+
                 const targetItem = getListDragTarget(e);
                 let dragData = {};
 
@@ -716,6 +879,7 @@
                 } catch (err) {
                     console.error('拖拽数据解析失败：', err);
                     listsContainer.style.backgroundColor = 'transparent';
+                    dropHandled = false;
                     return;
                 }
 
@@ -725,11 +889,27 @@
                     placeholder = null;
                 }
 
-                // 树→列表（核心修复：精准删除树节点，避免重复插入）
+                // 树→列表
                 if (dragData.type === 'treeNode' && dragData.listCompatible) {
                     console.log('树节点拖拽到列表：', dragData.data.N, 'ID:', dragData.data.id);
 
-                    // 1. 创建列表项（仅创建一次）
+                    // 检查列表中是否已存在相同ID的项（防止重复）
+                    const existingItems = document.querySelectorAll('.list');
+                    let isDuplicate = false;
+                    existingItems.forEach(item => {
+                        const itemData = JSON.parse(item.dataset.listFullData || '{}');
+                        if (itemData.id === dragData.data.id) {
+                            isDuplicate = true;
+                        }
+                    });
+                    if (isDuplicate) {
+                        console.log('列表中已存在该节点，跳过创建');
+                        listsContainer.style.backgroundColor = 'transparent';
+                        dropHandled = false;
+                        return;
+                    }
+
+                    // 创建列表项
                     const listDiv = createListItem(dragData.data, listsContainer.querySelectorAll('.list').length);
                     if (targetItem) {
                         const targetMidY = targetItem.getBoundingClientRect().top + targetItem.getBoundingClientRect().height / 2;
@@ -738,7 +918,7 @@
                         listsContainer.appendChild(listDiv);
                     }
 
-                    // 2. 精准删除树节点（通过ID匹配，仅删除拖拽的节点）
+                    // 精准删除树节点
                     const treeNodes = document.querySelectorAll('.tree-node');
                     let deleted = false;
                     treeNodes.forEach(node => {
@@ -747,7 +927,7 @@
                             console.log('删除树节点：', nodeData.N);
                             const parentContainer = node.parentNode;
                             node.remove();
-                            deleted = true; // 确保只删除一次
+                            deleted = true;
 
                             // 父节点无子节点时隐藏展开按钮
                             if (parentContainer.classList.contains('tree-children')) {
@@ -759,7 +939,7 @@
                         }
                     });
 
-                    // 3. 树容器为空时创建默认根节点（修复树消失问题）
+                    // 树容器为空时创建默认根节点
                     const treeContainer = document.querySelector('.tree-container');
                     if (treeContainer.querySelectorAll('.tree-node').length === 0) {
                         const defaultRoot = createTreeNode({
@@ -768,18 +948,17 @@
                             C: []
                         });
                         treeContainer.appendChild(defaultRoot);
-                        bindTreeContainerDragEvents(); // 重新绑定拖拽事件
+                        // 重新绑定树容器事件（因为之前清理过）
+                        bindTreeContainerDragEvents();
                     }
 
-                    // 4. 更新数据并终止函数（避免重复执行）
+                    // 更新数据
                     updateListData();
                     updateTreeData();
-                    listsContainer.style.backgroundColor = 'transparent';
-                    return;
                 }
 
                 // 列表→列表排序
-                if (dragData.type === 'listItem') {
+                else if (dragData.type === 'listItem') {
                     const draggedItem = document.querySelector(`.list[data-list-full-data*="${dragData.data.id}"]`);
                     if (draggedItem && targetItem) {
                         const targetMidY = targetItem.getBoundingClientRect().top + targetItem.getBoundingClientRect().height / 2;
@@ -791,10 +970,19 @@
                 }
 
                 listsContainer.style.backgroundColor = 'transparent';
-            });
+                setTimeout(() => {
+                    dropHandled = false;
+                }, 100);
+            };
+
+            // 绑定事件
+            listsContainer.addEventListener('dragenter', listDragEnterHandler);
+            listsContainer.addEventListener('dragleave', listDragLeaveHandler);
+            listsContainer.addEventListener('dragover', listDragOverHandler, { passive: false });
+            listsContainer.addEventListener('drop', listDropHandler);
         }
 
-        // 列表拖拽目标查找（重命名避免冲突）
+        // 列表拖拽目标查找
         function getListDragTarget(e) {
             const listsContainer = document.querySelector('.lists');
             const elements = listsContainer.querySelectorAll('.list:not(.dragging)');
@@ -813,7 +1001,7 @@
             return target;
         }
 
-        // 更新列表数据（同步索引）
+        // 更新列表数据
         function updateListData() {
             const listsContainer = document.querySelector('.lists');
             const listItems = document.querySelectorAll('.list');
@@ -830,6 +1018,13 @@
             listsContainer.dataset.sortedListData = JSON.stringify(sortedData);
             console.log('排序后的列表数据：', sortedData);
         }
+
+        // 页面加载完成后初始化一次（可选）
+        window.addEventListener('load', function () {
+            // 初始绑定一次拖拽事件
+            bindTreeContainerDragEvents();
+            initListDragAndDrop();
+        });
     </script>
 
 </body>
