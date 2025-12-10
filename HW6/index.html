@@ -68,8 +68,8 @@
         }
 
         .tree-serial-type0 {
-            width: 4vmin;
-            height: 4vmin;
+            width: 5vmin;
+            height: 5vmin;
             background-color: #ffd700;
             /* 星星颜色 */
             /* 核心：通过顶点坐标定义四尖星形状（10个顶点，对称分布） */
@@ -619,6 +619,16 @@
                 if (e.target === treeContainer) {
                     treeContainer.classList.remove('drop-target');
                 }
+                const relatedTarget = e.relatedTarget;
+                if (!relatedTarget || !treeContainer.contains(relatedTarget)) {
+                    treeContainer.classList.remove('drop-target');
+                    // 新增：离开时清理树占位符和节点高亮
+                    if (treePlaceholder) {
+                        treePlaceholder.remove();
+                        treePlaceholder = null;
+                    }
+                    document.querySelectorAll('.node-content.drop-target').forEach(el => el.classList.remove('drop-target'));
+                }
             };
 
             // 绑定事件
@@ -807,8 +817,13 @@
             function handleListDragEnd() {
                 isDragging = false;
                 listDiv.classList.remove('dragging');
-                const placeholder = document.querySelector('.list-placeholder');
-                if (placeholder) placeholder.remove();
+                const listPlaceholder = document.querySelector('.list-placeholder');
+                const treePlaceholder = document.querySelector('.tree-placeholder');
+                //清除树和列表的占位符
+                if (listPlaceholder) listPlaceholder.remove();
+                if (treePlaceholder) treePlaceholder.remove();
+
+
             }
 
             listDiv.addEventListener('dragstart', handleListDragStart);
