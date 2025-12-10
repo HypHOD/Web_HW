@@ -75,32 +75,21 @@
             /* 核心：通过顶点坐标定义四尖星形状（10个顶点，对称分布） */
 
             clip-path: polygon(50% 0%,
-                    /* 1. 上尖角（最顶端） */
                     61% 35%,
-                    /* 2. 右上过渡点（连接上尖角和右尖角） */
                     98% 35%,
-                    /* 3. 右尖角（最右端） */
                     68% 57%,
-                    /* 4. 右下过渡点（连接右尖角和下尖角） */
                     79% 91%,
-                    /* 5. 下尖角（最底端） */
                     50% 70%,
-                    /* 6. 左下过渡点（连接下尖角和左尖角） */
                     21% 91%,
-                    /* 7. 左尖角（最左端） */
                     32% 57%,
-                    /* 8. 左上过渡点（连接左尖角和上尖角） */
                     2% 35%,
-                    /* 9. 左过渡补充（确保左侧对称） */
-                    39% 35%
-                    /* 10. 左上过渡补充（闭合路径） */
-                );
+                    39% 35%);
             transition: clip-path 0.5s ease;
             transform-origin: center;
         }
 
         .tree-serial-type0:hover {
-            transform: rotate(360deg);
+            animation: rotateNonStop 1s linear infinite;
         }
 
         @keyframes rotateNonStop {
@@ -270,7 +259,7 @@
 
         // -------------------------- 全局核心函数--------------------------
         // 1. 全局创建树节点函数（原局部函数移到全局，避免无法访问）
-        function createTreeNode(nodeData) {
+        function createTreeNode(nodeData, isRoot = false) {
             const treeNodeDiv = document.createElement('div');
             treeNodeDiv.className = 'tree-node';
             // 确保节点ID唯一（兼容接口返回和手动创建）
@@ -285,9 +274,11 @@
                 toggleBtn.style.visibility = 'hidden';
             }
 
-            // 图标样式优化（匹配type定义：1-空心圆，2-实心圆，3-空心方，4-实心方）
+            // 图标样式优化（匹配type定义：1-空心圆，2-实心圆，3-空心方，4-实心方, !!0-根结点）
             const treeSerialDiv = document.createElement('div');
-            if (nodeData.type === 1) {
+            if (isRoot) {
+                treeSerialDiv.className = 'tree-serial-type0';
+            } else if (nodeData.type === 1) {
                 treeSerialDiv.className = 'tree-serial-type1';
             } else if (nodeData.type === 2) {
                 treeSerialDiv.className = 'tree-serial-type2';
@@ -310,7 +301,7 @@
 
             treeNodeDiv.append(nodeContentDiv, childrenContainer);
 
-            // 递归创建子节点
+            // 递归创建子节点 默认标记为不是根节点
             if (nodeData.C && nodeData.C.length > 0) {
                 nodeData.C.forEach(childNode => {
                     childrenContainer.appendChild(createTreeNode(childNode));
@@ -417,18 +408,18 @@
             });
             initListDragAndDrop();
 
-            // 渲染树（使用全局createTreeNode）
+            // 渲染树（使用全局createTreeNode,标记根结点）
             const treeData = result.tree || [];
             const treeContainer = document.querySelector('.tree-container');
             treeContainer.innerHTML = '';
             if (treeData && treeData.N) {
                 // 接口返回单个根节点
-                const rootNode = createTreeNode(treeData);
+                const rootNode = createTreeNode(treeData, true);
                 treeContainer.appendChild(rootNode);
             } else if (Array.isArray(treeData) && treeData.length > 0) {
-                // 接口返回多个根节点（罕见情况）
+                // 接口返回多个根节点
                 treeData.forEach(root => {
-                    treeContainer.appendChild(createTreeNode(root));
+                    treeContainer.appendChild(createTreeNode(root, true));
                 });
             } else {
                 // 空树时创建默认根节点
